@@ -47,11 +47,11 @@ dev_dependencies:
 flutter_icons:
   android: "launcher_icon"
   ios: true
-  image_path: "asset/icon/cheapcitybd.png"
+  image_path: "asset/icon/parcbazaar.png"
 
 flutter_native_splash:
   color: "#e1f5fe"
-  image: asset/icon/cheapcitybd.png
+  image: asset/icon/parcbazaar.png
   android_12:
 #  color_dark: "#042a49"
 #  image_dark: assets/logo_lockup_flutter_vertical_wht.png

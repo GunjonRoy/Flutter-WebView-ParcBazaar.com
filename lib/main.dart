@@ -1,4 +1,4 @@
-import 'package:cheapcitybd/cheapcitybd_webview_page.dart';
+import 'package:cheapcitybd/parcbazaar_webview_page.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 
@@ -7,6 +7,8 @@ void main() {
   FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
   runApp(const MyApp());
 }
+
+
 class MyApp extends StatelessWidget {
   const MyApp({Key? key}) : super(key: key);
 
@@ -19,7 +21,7 @@ class MyApp extends StatelessWidget {
       theme: ThemeData(
         primarySwatch: Colors.blue,
       ),
-      home:const CheapCityBdWebViewPage(),
+      home:const ParcbazaarWebViewPage(),
     );
   }
 }
