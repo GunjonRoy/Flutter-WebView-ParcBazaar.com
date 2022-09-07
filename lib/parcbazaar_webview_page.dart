@@ -2,11 +2,12 @@ import 'dart:async';
 import 'dart:convert';
 import 'dart:io';
 import 'dart:typed_data';
+import 'package:cheapcitybd/view_model.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
 import 'package:path_provider/path_provider.dart';
+import 'package:provider/provider.dart';
 import 'package:webview_flutter/webview_flutter.dart';
-
 
 const String kNavigationExamplePage = '''
 <!DOCTYPE html><html>
@@ -74,13 +75,13 @@ class ParcbazaarWebViewPage extends StatefulWidget {
 
 class _ParcbazaarWebViewPageState extends State<ParcbazaarWebViewPage> {
   final Completer<WebViewController> _controller =
-  Completer<WebViewController>();
+      Completer<WebViewController>();
 
   startSplashScreen() async {
     var duration = const Duration(seconds: 3);
     return Timer(
       duration,
-          () {
+      () {
         setState(() {
           isLoading = false;
         });
@@ -96,17 +97,13 @@ class _ParcbazaarWebViewPageState extends State<ParcbazaarWebViewPage> {
       WebView.platform = SurfaceAndroidWebView();
     }
   }
+
   void initialization() async {
     // This is where you can initialize the resources needed by your app while
     // the splash screen is displayed.  Remove the following example because
     // delaying the user experience is a bad design practice!
     // ignore_for_file: avoid_print
-    print('ready in 3...');
-    await Future.delayed(const Duration(seconds: 1));
-    print('ready in 2...');
-    await Future.delayed(const Duration(seconds: 1));
-    print('ready in 1...');
-    await Future.delayed(const Duration(seconds: 1));
+    // print('ready in 3...');
     print('go!');
     FlutterNativeSplash.remove();
   }
@@ -122,10 +119,27 @@ class _ParcbazaarWebViewPageState extends State<ParcbazaarWebViewPage> {
     }
   }
 
-  bool isLoading=true;
+  bool isLoading = true;
+  showLoaderDialog(BuildContext context){
+    AlertDialog alert=AlertDialog(
+      content: new Row(
+        children: [
+          CircularProgressIndicator(),
+          Container(margin: EdgeInsets.only(left: 7),child:Text("Loading..." )),
+        ],),
+    );
+    showDialog(barrierDismissible: false,
+      context:context,
+      builder:(BuildContext context){
+        return alert;
+      },
+    );
+  }
 
   @override
   Widget build(BuildContext context) {
+    final webViewViewModel=Provider.of<WebViewVewModel>(context);
+
     Timer(Duration(seconds: 3), () {
       if (mounted)
         setState(() {
@@ -151,11 +165,13 @@ class _ParcbazaarWebViewPageState extends State<ParcbazaarWebViewPage> {
               WebView(
                 initialUrl: 'http://parcbazaar.com',
                 javascriptMode: JavascriptMode.unrestricted,
-                onWebViewCreated: (WebViewController webViewController) {
+                onWebViewCreated: (WebViewController webViewController){
                   _controller.complete(webViewController);
                 },
-                onProgress: (int progress) {
+                onProgress: (int progress){
+                  webViewViewModel.setIsLoading(true);
                   print('WebView is loading (progress : $progress%)');
+
                 },
                 javascriptChannels: <JavascriptChannel>{
                   _toasterJavascriptChannel(context),
@@ -165,6 +181,9 @@ class _ParcbazaarWebViewPageState extends State<ParcbazaarWebViewPage> {
                     print('blocking navigation to $request}');
                     return NavigationDecision.prevent;
                   }
+                  // setState(() {
+                  //   isLoading = true;
+                  // });
                   print('allowing navigation to $request');
                   return NavigationDecision.navigate;
                 },
@@ -173,20 +192,23 @@ class _ParcbazaarWebViewPageState extends State<ParcbazaarWebViewPage> {
                 },
                 onPageFinished: (String url) {
                   print('Page finished loading: $url');
+                  webViewViewModel.setIsLoading(false);
                 },
                 gestureNavigationEnabled: true,
                 backgroundColor: const Color(0x00000000),
               ),
-              isLoading ? Center(
-                child: SizedBox(height:100,width:100,child: Image.asset("asset/icon/parcbazaar.png")),
-                // Text(
-                //   'APP LOGO',
-                //   style: TextStyle(
-                //     fontSize: 30,
-                //     fontWeight: FontWeight.bold,
-                //   ),
-                // ),
-              )
+              webViewViewModel.isLoading
+                  ?AlertDialog(
+                  content:  SizedBox(
+                    height: 50,
+                    width: MediaQuery.of(context).size.width*.9,
+                    child: Row(
+                      children: [
+                        CircularProgressIndicator(color: Colors.cyanAccent,),
+                        Container(margin: EdgeInsets.only(left: 15),child:Text("  Loading",style: TextStyle(fontSize: 13), )),
+                      ],),
+                  ),
+                )
                   : Stack(),
             ],
           ),
@@ -206,7 +228,7 @@ class _ParcbazaarWebViewPageState extends State<ParcbazaarWebViewPage> {
         });
   }
 
-  Widget favoriteButton(){
+  Widget favoriteButton() {
     return FutureBuilder<WebViewController>(
         future: _controller.future,
         builder: (BuildContext context,
@@ -380,7 +402,7 @@ class SampleMenu extends StatelessWidget {
   Future<void> _onListCookies(
       WebViewController controller, BuildContext context) async {
     final String cookies =
-    await controller.runJavascriptReturningResult('document.cookie');
+        await controller.runJavascriptReturningResult('document.cookie');
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
       content: Column(
         mainAxisAlignment: MainAxisAlignment.end,
@@ -405,7 +427,7 @@ class SampleMenu extends StatelessWidget {
   Future<void> _onListCache(
       WebViewController controller, BuildContext context) async {
     await controller.runJavascript('caches.keys()'
-    // ignore: missing_whitespace_between_adjacent_strings
+        // ignore: missing_whitespace_between_adjacent_strings
         '.then((cacheKeys) => JSON.stringify({"cacheKeys" : cacheKeys, "localStorage" : localStorage}))'
         '.then((caches) => Toaster.postMessage(caches))');
   }
@@ -432,7 +454,7 @@ class SampleMenu extends StatelessWidget {
   Future<void> _onNavigationDelegateExample(
       WebViewController controller, BuildContext context) async {
     final String contentBase64 =
-    base64Encode(const Utf8Encoder().convert(kNavigationExamplePage));
+        base64Encode(const Utf8Encoder().convert(kNavigationExamplePage));
     await controller.loadUrl('data:text/html;base64,$contentBase64');
   }
 
@@ -484,7 +506,7 @@ class SampleMenu extends StatelessWidget {
     }
     final List<String> cookieList = cookies.split(';');
     final Iterable<Text> cookieWidgets =
-    cookieList.map((String cookie) => Text(cookie));
+        cookieList.map((String cookie) => Text(cookie));
     return Column(
       mainAxisAlignment: MainAxisAlignment.end,
       mainAxisSize: MainAxisSize.min,
@@ -527,39 +549,39 @@ class NavigationControls extends StatelessWidget {
               onPressed: !webViewReady
                   ? null
                   : () async {
-                if (await controller!.canGoBack()) {
-                  await controller.goBack();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(content: Text('No back history item')),
-                  );
-                  return;
-                }
-              },
+                      if (await controller!.canGoBack()) {
+                        await controller.goBack();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(content: Text('No back history item')),
+                        );
+                        return;
+                      }
+                    },
             ),
             IconButton(
               icon: const Icon(Icons.arrow_forward_ios),
               onPressed: !webViewReady
                   ? null
                   : () async {
-                if (await controller!.canGoForward()) {
-                  await controller.goForward();
-                } else {
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    const SnackBar(
-                        content: Text('No forward history item')),
-                  );
-                  return;
-                }
-              },
+                      if (await controller!.canGoForward()) {
+                        await controller.goForward();
+                      } else {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                              content: Text('No forward history item')),
+                        );
+                        return;
+                      }
+                    },
             ),
             IconButton(
               icon: const Icon(Icons.replay),
               onPressed: !webViewReady
                   ? null
                   : () {
-                controller!.reload();
-              },
+                      controller!.reload();
+                    },
             ),
           ],
         );
